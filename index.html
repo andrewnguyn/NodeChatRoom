@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      #m { width: 69.5%;}
+      #user_name { width: 20%;}
+    </style>
+    <!-- ************ Bootstrap ************ -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+  </head>
+  <body>
+
+    <div class="container-fluid">
+      <div class="row">
+        <ul id="messages"></ul>
+        <ul id="typing"></ul>
+        <form action="">
+          <input id="user_name" autocomplete="off" placeholder="name"/>
+          <input id="m" autocomplete="off" placeholder="message"/><button>Send</button>
+        </form>
+      </div>
+    </div>
+    
+    <script>
+      var socket = io();
+
+      //send chat message
+      $('form').submit(function() {
+        $('#messages').append($('<li>').text($('#user_name').val() + ": " + $('#m').val()));
+        socket.emit('chat message', { from: $('#user_name').val(), msg: $('#m').val() });
+        $('#m').val('');
+        return false;
+      });
+
+      socket.on('chat message', function(msg) {
+        $('#messages').append($('<li>').text(msg.from + ": " +msg.msg));
+      });
+
+      socket.on('new connection', function(msg) {
+        $('#messages').append($('<li>').text(msg));
+      });
+
+      socket.on('disconnection', function(msg) {
+        $('#messages').append($('<li>').text(msg));
+      });
+
+      //typing
+      $('#m').on("change", function() {
+        //finished typing
+        if ($('#m').val() == '') {
+          socket.emit('finished typing', $('#user_name').val());
+        } 
+        // is typing
+        else {
+          socket.emit('is typing', $('#user_name').val());
+        }
+      });
+
+      socket.on('is typing', function(user_name) {
+        var found = false;
+        $.each($('#typing li'), function(i, v) {
+          if (v.text() == user_name + " is typing") {
+            found = true;
+          }
+        });
+        
+        if (!found)
+         $('#typing').append($('<li>').text(user_name + " is typing")); 
+      });
+
+      // socket.on('finished typing', function(user_name) {
+      //   $.each($('#typing li'), function(i, v) {
+      //     if (v.text() == user_name + " is typing") {
+      //       found = true;
+      //     }
+      //   };
+      // });
+
+    </script>
+  
+
+
+  </body>
+</html>
